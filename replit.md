@@ -105,6 +105,35 @@ Multi-provider fallback architecture ensures 99.9%+ availability for all feature
 **🎯 Pattern Consistency:**
 Matches proven video swap implementation - all 9 media-heavy features now use URL-based download pattern
 
+**Template Sorting Enhancement (October 2025)**
+Implemented automatic newest-first ordering for all dynamically loaded templates from Supabase Storage:
+
+**🎯 Feature:**
+Templates (both photo and video) now appear with newest uploads first, making it easy for content managers to update the app with fresh content.
+
+**✅ Implementation:**
+- Updated `/api/ai/photo-templates/story` endpoint to sort by `created_at DESC`
+- Updated `/api/ai/video-templates` endpoint to sort by `created_at DESC`
+- Applied to all 14 story template categories (Travel, Gym, Selfie, Tattoo, Wedding, Sport, Christmas, New Year, Birthday, School, Fashion Show, Profile, Suits)
+- Applied to all video template categories
+
+**🔧 Technical Details:**
+Backend sorts Supabase Storage API responses before processing:
+```python
+# Sort photos/videos by created_at DESC (newest first)
+items_sorted = sorted(
+    items,
+    key=lambda x: x.get('created_at', ''),
+    reverse=True
+)
+```
+
+**📊 Benefits:**
+- Content managers can upload new templates and they instantly appear at the top
+- No manual sorting required in Flutter app
+- Consistent ordering across photo and video templates
+- Graceful fallback to original order if `created_at` metadata is missing
+
 ## External Dependencies
 
 - **Supabase**: Backend services (authentication, database, storage).
