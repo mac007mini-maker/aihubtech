@@ -627,8 +627,15 @@ def get_story_photo_templates():
             folder_response.raise_for_status()
             photos = folder_response.json()
             
+            # Sort photos by created_at DESC (newest first)
+            photos_sorted = sorted(
+                photos,
+                key=lambda x: x.get('created_at', ''),
+                reverse=True
+            )
+            
             # Process each photo in this category
-            for photo_item in photos:
+            for photo_item in photos_sorted:
                 filename = photo_item.get('name')
                 # Support common image formats
                 if not filename or not any(filename.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']):
