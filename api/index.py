@@ -402,8 +402,15 @@ def get_video_templates():
             folder_response.raise_for_status()
             videos = folder_response.json()
             
+            # Sort videos by created_at DESC (newest first)
+            videos_sorted = sorted(
+                videos,
+                key=lambda x: x.get('created_at', ''),
+                reverse=True
+            )
+            
             # Process each video in this category
-            for video_item in videos:
+            for video_item in videos_sorted:
                 filename = video_item.get('name')
                 if not filename or not filename.endswith('.mp4'):
                     continue
