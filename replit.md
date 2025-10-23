@@ -168,7 +168,6 @@ items_sorted = sorted(
 - **RevenueCat**: In-app purchase and subscription management.
 - **Huggingface API**: AI models for various transformations and generations.
 - **VModel API**: Primary provider for video face swap (photo-to-video).
-- **Replicate API**: Hosts Nano-Banana (google/nano-banana) for image face swap PRIMARY, plus photo restoration, and style transfer. Also provides legacy face swap models as FALLBACK #2.
-- **Nano-Banana (Gemini 2.5 Flash Image)**: Google's state-of-the-art image editing model via Replicate. PRIMARY provider for image face swap with natural language prompts, multi-image fusion, and character consistency. Features invisible SynthID watermarking.
-- **PiAPI**: Face swap provider FALLBACK #1 for both image and video operations. 99.9% uptime SLA.
+- **Replicate API**: Hosts AI models for photo restoration (GFPGAN), HD enhancement (Real-ESRGAN), and style transfer. Also provides legacy face swap models (easel/advanced-face-swap, omniedgeio/face-swap) as FALLBACK.
+- **PiAPI**: PRIMARY face swap provider for both image and video operations. 99.9% uptime SLA, enterprise-grade reliability, photorealistic results.
 - **Flutter Core Dependencies**: `supabase_flutter`, `cached_network_image`, `go_router`, `google_fonts`, `flutter_animate`, `http`, `permission_handler`, `path_provider`, `applovin_max`, `share_plus`, `url_launcher`, `firebase_core`, `firebase_remote_config`, `purchases_flutter`, `gal`, `shared_preferences`.
