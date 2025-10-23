@@ -3,16 +3,29 @@ Multi-Provider Face Swap Gateway with Production-Grade Reliability
 
 Architecture:
 - Provider abstraction for easy switching/fallback
-- Cascading fallback: Replicate → PiAPI
+- Cascading fallback: Nano-Banana → PiAPI → Replicate
 - Retry logic with exponential backoff
 - Comprehensive input validation
 - Version pinning for stability
 - Webhook support for async operations (PiAPI)
 - Timeout handling per provider
 
-Providers:
-1. Replicate (Image): easel/advanced-face-swap, cdingram/face-swap
-2. PiAPI (Image + Video): Qubico/image-toolkit, Qubico/video-toolkit
+Providers (Priority Order):
+1. Nano-Banana PRIMARY (Image): google/nano-banana (Gemini 2.5 Flash Image)
+   - Natural language-based face swap
+   - Multi-image fusion
+   - Character consistency
+   - Fast (8-10s), creative results
+   - SynthID watermark
+
+2. PiAPI FALLBACK #1 (Image + Video): Qubico/image-toolkit, Qubico/video-toolkit
+   - 99.9% uptime SLA
+   - Enterprise-grade reliability
+   - Webhook support
+
+3. Replicate FALLBACK #2 (Image): easel/advanced-face-swap, omniedgeio/face-swap
+   - Legacy models for emergency
+   - Stable, version-pinned
 """
 
 import os
@@ -67,6 +80,142 @@ class FaceSwapProvider(ABC):
     def get_timeout(self) -> int:
         """Return provider timeout in seconds"""
         pass
+
+class NanoBananaProvider(FaceSwapProvider):
+    """
+    Google Nano-Banana (Gemini 2.5 Flash Image) provider for face swap
+    
+    Features:
+    - Natural language-based face swap
+    - Multi-image fusion capability
+    - Character consistency
+    - Fast processing (8-10s per image)
+    - SynthID watermarking (invisible)
+    
+    Model: google/nano-banana on Replicate
+    """
+    
+    MODEL_NAME = "google/nano-banana"
+    TIMEOUT = 60  # 60s timeout (model typically takes 8-10s)
+    
+    def __init__(self, api_token: str):
+        self.api_token = api_token
+        os.environ["REPLICATE_API_TOKEN"] = api_token
+    
+    def get_name(self) -> str:
+        return "Nano-Banana"
+    
+    def get_timeout(self) -> int:
+        return self.TIMEOUT
+    
+    async def swap_face(
+        self, 
+        target: str, 
+        source: str, 
+        media_type: FaceSwapMediaType = FaceSwapMediaType.IMAGE,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Nano-Banana face swap using natural language prompts
+        
+        Args:
+            target: Target image (URL or data URI)
+            source: Source face image (URL or data URI)
+            media_type: Only IMAGE supported (video not supported)
+        """
+        
+        if media_type == FaceSwapMediaType.VIDEO:
+            return {
+                "success": False,
+                "error": "Nano-Banana does not support video face swap",
+                "provider": self.get_name()
+            }
+        
+        try:
+            print(f"🍌 [NANO-BANANA] Starting face swap (timeout={self.TIMEOUT}s)...")
+            
+            # Convert data URIs to URLs if needed (Nano-Banana may need URLs)
+            target_input = target
+            source_input = source
+            
+            # If data URI, we need to use it directly (Replicate handles data URIs)
+            # Nano-Banana accepts both URLs and data URIs in image_input array
+            
+            # Natural language prompt optimized for face swap
+            prompt = (
+                "Swap the face from the second image onto the person in the first image. "
+                "Maintain the original pose, lighting, background, and body of the first image. "
+                "Keep facial features, skin tone, and expression from the second image's face. "
+                "Make the result look natural and seamless."
+            )
+            
+            # Prepare input for Nano-Banana
+            params = {
+                "prompt": prompt,
+                "image_input": [target_input, source_input],
+                "aspect_ratio": "match_input_image",
+                "output_format": "jpg"
+            }
+            
+            print(f"📤 [NANO-BANANA] Target: {target_input[:80]}...")
+            print(f"📤 [NANO-BANANA] Source: {source_input[:80]}...")
+            print(f"📝 [NANO-BANANA] Prompt: {prompt[:100]}...")
+            
+            # Run with timeout
+            def _run():
+                return replicate.run(self.MODEL_NAME, input=params)
+            
+            loop = asyncio.get_event_loop()
+            output = await asyncio.wait_for(
+                loop.run_in_executor(None, _run),
+                timeout=self.TIMEOUT
+            )
+            
+            # Debug output
+            print(f"🔍 [NANO-BANANA] Output type: {type(output).__name__}")
+            
+            if output:
+                # Handle output (URL string or FileOutput object)
+                result_url = None
+                
+                if isinstance(output, list) and len(output) > 0:
+                    result_url = str(output[0])
+                elif hasattr(output, 'url'):
+                    result_url = str(output.url)
+                else:
+                    result_url = str(output)
+                
+                print(f"✅ [NANO-BANANA] Success! URL: {result_url[:100]}...")
+                return {
+                    "success": True,
+                    "result_url": result_url,
+                    "message": "Face swap completed via Nano-Banana (Gemini 2.5 Flash Image)",
+                    "provider": self.get_name(),
+                    "model": self.MODEL_NAME,
+                    "watermark": "SynthID (invisible)"
+                }
+            else:
+                print(f"⚠️ [NANO-BANANA] No output returned")
+                return {
+                    "success": False,
+                    "error": "No output from Nano-Banana",
+                    "provider": self.get_name()
+                }
+                
+        except asyncio.TimeoutError:
+            print(f"⏱️ [NANO-BANANA] Timeout after {self.TIMEOUT}s")
+            return {
+                "success": False,
+                "error": f"Nano-Banana timeout ({self.TIMEOUT}s)",
+                "provider": self.get_name()
+            }
+        except Exception as e:
+            print(f"⚠️ [NANO-BANANA] Error: {type(e).__name__}: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "provider": self.get_name()
+            }
 
 class ReplicateProvider(FaceSwapProvider):
     """Replicate face swap provider with version pinning"""
@@ -383,18 +532,23 @@ class FaceSwapGateway:
         self.replicate_token = os.environ.get('REPLICATE_API_TOKEN')
         self.piapi_key = os.environ.get('PIAPI_API_KEY')
         
-        # Initialize providers (Replicate first to save credits)
+        # Initialize providers in priority order
         self.providers: List[FaceSwapProvider] = []
         
-        # Replicate PRIMARY (cheaper, stable models)
+        # 1. Nano-Banana PRIMARY (Google Gemini 2.5 Flash, creative face swap)
         if self.replicate_token:
-            self.providers.append(ReplicateProvider(self.replicate_token))
-            print("✅ Replicate provider enabled (PRIMARY - budget-friendly)")
+            self.providers.append(NanoBananaProvider(self.replicate_token))
+            print("✅ Nano-Banana provider enabled (PRIMARY - Gemini 2.5 Flash)")
         
-        # PiAPI FALLBACK (99.9% SLA, enterprise-grade)
+        # 2. PiAPI FALLBACK #1 (99.9% SLA, enterprise-grade)
         if self.piapi_key:
             self.providers.append(PiAPIProvider(self.piapi_key))
-            print("✅ PiAPI provider enabled (FALLBACK - 99.9% uptime SLA)")
+            print("✅ PiAPI provider enabled (FALLBACK #1 - 99.9% uptime SLA)")
+        
+        # 3. Replicate FALLBACK #2 (legacy models for emergency)
+        if self.replicate_token:
+            self.providers.append(ReplicateProvider(self.replicate_token))
+            print("✅ Replicate provider enabled (FALLBACK #2 - legacy models)")
         
         print(f"🔌 Face Swap Gateway initialized with {len(self.providers)} provider(s)")
         if len(self.providers) > 1:

@@ -17,7 +17,7 @@ Developed with Flutter 3.32.0 (Dart 3.8.0), Viso AI integrates with a Python Fla
 ### Feature Specifications
 - **AI Headshot & Avatar Generation**: Produces studio-grade AI headshots and stylized avatars.
 - **Photo Enhancement**: Includes HD Image Enhancement (via Replicate Real-ESRGAN) and Old Photo Restoration (via Replicate GFPGAN).
-- **Face Swapping**: Offers AI-powered face replacement with a multi-provider fallback system (PiAPI primary, Replicate fallback), robust gallery permission handling, and rewarded ad integration. Supports both image and video face swap functionalities.
+- **Face Swapping**: Offers AI-powered face replacement with a multi-provider fallback system (Nano-Banana primary, PiAPI fallback #1, Replicate fallback #2), robust gallery permission handling, and rewarded ad integration. Supports both image and video face swap functionalities. Nano-Banana (Google Gemini 2.5 Flash Image) provides creative, natural language-based face swaps with SynthID watermarking.
 - **AI Style Templates**: Features 14 diverse template categories for face swap and aesthetic transformations (e.g., Travel, Gym, Selfie, Tattoo, Wedding, Sport, Christmas, New Year, Birthday, School, Fashion Show, Profile, Suits). Each category includes carousel layouts and direct download capabilities. Templates are loaded dynamically from Supabase Storage.
 - **AI Transformation Templates**: Provides 5 advanced AI transformations accessible from the Templates Gallery. Each template includes:
     - Multi-provider fallback for high uptime.
@@ -142,6 +142,7 @@ items_sorted = sorted(
 - **RevenueCat**: In-app purchase and subscription management.
 - **Huggingface API**: AI models for various transformations and generations.
 - **VModel API**: Primary provider for video face swap (photo-to-video).
-- **Replicate API**: Provider for image and video face swap fallback, photo restoration, and style transfer.
-- **PiAPI**: Face swap provider (fallback for image-only operations).
+- **Replicate API**: Hosts Nano-Banana (google/nano-banana) for image face swap PRIMARY, plus photo restoration, and style transfer. Also provides legacy face swap models as FALLBACK #2.
+- **Nano-Banana (Gemini 2.5 Flash Image)**: Google's state-of-the-art image editing model via Replicate. PRIMARY provider for image face swap with natural language prompts, multi-image fusion, and character consistency. Features invisible SynthID watermarking.
+- **PiAPI**: Face swap provider FALLBACK #1 for both image and video operations. 99.9% uptime SLA.
 - **Flutter Core Dependencies**: `supabase_flutter`, `cached_network_image`, `go_router`, `google_fonts`, `flutter_animate`, `http`, `permission_handler`, `path_provider`, `applovin_max`, `share_plus`, `url_launcher`, `firebase_core`, `firebase_remote_config`, `purchases_flutter`, `gal`, `shared_preferences`.
