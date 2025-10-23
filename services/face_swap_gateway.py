@@ -3,7 +3,7 @@ Multi-Provider Face Swap Gateway with Production-Grade Reliability
 
 Architecture:
 - Provider abstraction for easy switching/fallback
-- Cascading fallback: Nano-Banana → PiAPI → Replicate
+- Cascading fallback: PiAPI → Replicate
 - Retry logic with exponential backoff
 - Comprehensive input validation
 - Version pinning for stability
@@ -11,21 +11,20 @@ Architecture:
 - Timeout handling per provider
 
 Providers (Priority Order):
-1. Nano-Banana PRIMARY (Image): google/nano-banana (Gemini 2.5 Flash Image)
-   - Natural language-based face swap
-   - Multi-image fusion
-   - Character consistency
-   - Fast (8-10s), creative results
-   - SynthID watermark
-
-2. PiAPI FALLBACK #1 (Image + Video): Qubico/image-toolkit, Qubico/video-toolkit
+1. PiAPI PRIMARY (Image + Video): Qubico/image-toolkit, Qubico/video-toolkit
    - 99.9% uptime SLA
    - Enterprise-grade reliability
+   - Precise face swap (photorealistic results)
    - Webhook support
+   - Fast processing
 
-3. Replicate FALLBACK #2 (Image): easel/advanced-face-swap, omniedgeio/face-swap
+2. Replicate FALLBACK (Image): easel/advanced-face-swap, omniedgeio/face-swap
    - Legacy models for emergency
    - Stable, version-pinned
+
+Note: Nano-Banana (google/nano-banana) was tested but DISABLED because it performs 
+creative image editing instead of precise face swapping. It only adjusts image view 
+and composition rather than replacing faces accurately.
 """
 
 import os
@@ -539,20 +538,22 @@ class FaceSwapGateway:
         # Initialize providers in priority order
         self.providers: List[FaceSwapProvider] = []
         
-        # 1. Nano-Banana PRIMARY (Google Gemini 2.5 Flash, creative face swap)
-        if self.replicate_token:
-            self.providers.append(NanoBananaProvider(self.replicate_token))
-            print("✅ Nano-Banana provider enabled (PRIMARY - Gemini 2.5 Flash)")
+        # Nano-Banana DISABLED - tested but unsuitable for face swap
+        # Issue: Model performs creative image editing instead of precise face replacement
+        # It only adjusts view/composition, not actual face swap
+        # if self.replicate_token:
+        #     self.providers.append(NanoBananaProvider(self.replicate_token))
+        #     print("✅ Nano-Banana provider enabled (PRIMARY - Gemini 2.5 Flash)")
         
-        # 2. PiAPI FALLBACK #1 (99.9% SLA, enterprise-grade)
+        # 1. PiAPI PRIMARY (99.9% SLA, enterprise-grade, precise face swap)
         if self.piapi_key:
             self.providers.append(PiAPIProvider(self.piapi_key))
-            print("✅ PiAPI provider enabled (FALLBACK #1 - 99.9% uptime SLA)")
+            print("✅ PiAPI provider enabled (PRIMARY - 99.9% uptime SLA, photorealistic)")
         
-        # 3. Replicate FALLBACK #2 (legacy models for emergency)
+        # 2. Replicate FALLBACK (legacy models for emergency)
         if self.replicate_token:
             self.providers.append(ReplicateProvider(self.replicate_token))
-            print("✅ Replicate provider enabled (FALLBACK #2 - legacy models)")
+            print("✅ Replicate provider enabled (FALLBACK - legacy models)")
         
         print(f"🔌 Face Swap Gateway initialized with {len(self.providers)} provider(s)")
         if len(self.providers) > 1:

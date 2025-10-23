@@ -17,7 +17,7 @@ Developed with Flutter 3.32.0 (Dart 3.8.0), Viso AI integrates with a Python Fla
 ### Feature Specifications
 - **AI Headshot & Avatar Generation**: Produces studio-grade AI headshots and stylized avatars.
 - **Photo Enhancement**: Includes HD Image Enhancement (via Replicate Real-ESRGAN) and Old Photo Restoration (via Replicate GFPGAN).
-- **Face Swapping**: Offers AI-powered face replacement with a multi-provider fallback system (Nano-Banana primary, PiAPI fallback #1, Replicate fallback #2), robust gallery permission handling, and rewarded ad integration. Supports both image and video face swap functionalities. Nano-Banana (Google Gemini 2.5 Flash Image) provides creative, natural language-based face swaps with SynthID watermarking.
+- **Face Swapping**: Offers AI-powered face replacement with a multi-provider fallback system (PiAPI PRIMARY, Replicate FALLBACK), robust gallery permission handling, and rewarded ad integration. Supports both image and video face swap functionalities. PiAPI provides precise, photorealistic face swaps with 99.9% uptime SLA and enterprise-grade reliability.
 - **AI Style Templates**: Features 14 diverse template categories for face swap and aesthetic transformations (e.g., Travel, Gym, Selfie, Tattoo, Wedding, Sport, Christmas, New Year, Birthday, School, Fashion Show, Profile, Suits). Each category includes carousel layouts and direct download capabilities. Templates are loaded dynamically from Supabase Storage.
 - **AI Transformation Templates**: Provides 5 advanced AI transformations accessible from the Templates Gallery. Each template includes:
     - Multi-provider fallback for high uptime.
@@ -104,6 +104,32 @@ Multi-provider fallback architecture ensures 99.9%+ availability for all feature
 
 **🎯 Pattern Consistency:**
 Matches proven video swap implementation - all 9 media-heavy features now use URL-based download pattern
+
+**Face Swap Provider Update: PiAPI PRIMARY (October 23, 2025)**
+Reverted face swap provider priority after Nano-Banana experiment proved unsuitable:
+
+**🎯 Issue Identified:**
+Google Nano-Banana (google/nano-banana on Replicate) was tested as PRIMARY face swap provider but produced incorrect results. Instead of precise face swapping, the model performed creative image editing - only adjusting image view/composition and zooming out to show wider scenes, without actually replacing faces.
+
+**✅ Solution:**
+- **DISABLED Nano-Banana** for face swap (commented out in `services/face_swap_gateway.py`)
+- **SET PiAPI as PRIMARY** - specialized face swap provider with proven photorealistic results
+- **Replicate models as FALLBACK** - emergency backup
+
+**🔧 Technical Changes:**
+- Updated `services/face_swap_gateway.py`:
+  - Commented out NanoBananaProvider initialization
+  - Promoted PiAPIProvider to PRIMARY position
+  - Updated architecture documentation in file header
+  - Provider order now: PiAPI → Replicate (2 providers instead of 3)
+
+**📊 Provider Comparison:**
+- **Nano-Banana (DISABLED):** Creative editing model, unsuitable for precise face swap - only adjusts view/composition
+- **PiAPI (NEW PRIMARY):** Specialized face swap, 99.9% uptime, photorealistic, supports image + video
+- **Replicate (FALLBACK):** Legacy models (easel/advanced-face-swap, omniedgeio/face-swap) for emergency
+
+**🎯 Decision Rationale:**
+User testing confirmed Nano-Banana does not perform actual face replacement despite multiple prompt engineering attempts. PiAPI provides the precision and reliability needed for production face swap feature.
 
 **Template Sorting Enhancement (October 2025)**
 Implemented automatic newest-first ordering for all dynamically loaded templates from Supabase Storage:
