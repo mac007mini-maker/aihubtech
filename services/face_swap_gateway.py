@@ -141,15 +141,19 @@ class NanoBananaProvider(FaceSwapProvider):
             # If data URI, we need to use it directly (Replicate handles data URIs)
             # Nano-Banana accepts both URLs and data URIs in image_input array
             
-            # Natural language prompt optimized for face swap
+            # Natural language prompt optimized for precise face swap
+            # Key: Be extremely explicit about what to keep vs what to replace
             prompt = (
-                "Swap the face from the second image onto the person in the first image. "
-                "Maintain the original pose, lighting, background, and body of the first image. "
-                "Keep facial features, skin tone, and expression from the second image's face. "
-                "Make the result look natural and seamless."
+                "Replace ONLY the face in the first image with the exact face from the second image. "
+                "Copy the facial features, skin tone, and identity from the second image's face. "
+                "Do NOT change anything else - preserve the original body, pose, clothing, hands, "
+                "background, lighting, and all other elements from the first image. "
+                "Make the face swap look photorealistic and seamless. "
+                "Keep all accessories, hairstyle, and outfit from the first image unchanged."
             )
             
             # Prepare input for Nano-Banana
+            # Order: [target scene, source face] - target is what we keep, source is the face to copy
             params = {
                 "prompt": prompt,
                 "image_input": [target_input, source_input],
